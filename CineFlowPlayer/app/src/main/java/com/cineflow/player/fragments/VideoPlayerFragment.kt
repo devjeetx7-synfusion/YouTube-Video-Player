@@ -9,6 +9,9 @@ import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+import com.cineflow.player.models.VideoEntity
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.navArgs
 import com.cineflow.player.R
@@ -89,10 +92,18 @@ class VideoPlayerFragment : Fragment() {
             play()
         }
 
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.favorites.collect { favorites ->
+                isFavorite = favorites.any { it.url == url }
+                updateFavoriteIcon()
+            }
+        }
+
         btnFavorite.setOnClickListener {
             isFavorite = !isFavorite
             updateFavoriteIcon()
-            // Typically would sync with repository here
+            viewModel.saveVideo(VideoEntity(url, tvTitle.text.toString(), if (resolved is VideoSource.YouTube) "YouTube" else "Native", if (resolved is VideoSource.YouTube) "https://i.ytimg.com/vi/${resolved.videoId}/hqdefault.jpg" else null, 0L, System.currentTimeMillis(), isFavorite))
+            viewModel.setFavorite(url, isFavorite)
             Toast.makeText(context, if(isFavorite) "Added to Favorites" else "Removed from Favorites", Toast.LENGTH_SHORT).show()
         }
 
