@@ -16,6 +16,8 @@ class VideoRepository(
 
     fun getFavorites(): Flow<List<VideoEntity>> = videoDao.getFavorites()
 
+    suspend fun findVideo(url: String): VideoEntity? = videoDao.findVideo(url)
+
     suspend fun insertVideo(video: VideoEntity) = videoDao.insertVideo(video)
 
     suspend fun updateFavoriteStatus(url: String, isFavorite: Boolean) = videoDao.updateFavoriteStatus(url, isFavorite)
