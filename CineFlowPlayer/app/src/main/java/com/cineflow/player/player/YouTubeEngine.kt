@@ -1,6 +1,7 @@
 package com.cineflow.player.player
 
 import android.content.Context
+import android.util.Log
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.lifecycle.LifecycleOwner
@@ -63,6 +64,7 @@ class YouTubeEngine(private val context: Context) : PlayerEngine {
             }
 
             override fun onError(youTubePlayer: YouTubePlayer, error: PlayerConstants.PlayerError) {
+                Log.e("CineFlowYouTube", "IFrame player error: $error; videoId=$currentVideoId")
                 stateListener?.invoke(PlaybackState.ERROR)
             }
 
