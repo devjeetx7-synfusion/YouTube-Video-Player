@@ -12,6 +12,8 @@ class VideoRepository(
     private val playlistDao: PlaylistDao
 ) {
 
+    fun getAllVideos(): Flow<List<VideoEntity>> = videoDao.getAllVideos()
+
     fun getFavorites(): Flow<List<VideoEntity>> = videoDao.getFavorites()
 
     suspend fun insertVideo(video: VideoEntity) = videoDao.insertVideo(video)
