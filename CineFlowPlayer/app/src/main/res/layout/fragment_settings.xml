@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="?android:colorBackground">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@android:color/transparent"
+        app:title="Settings"
+        app:titleTextColor="?attr/colorOnBackground"
+        xmlns:app="http://schemas.android.com/apk/res-auto"/>
+
+    <com.google.android.material.switchmaterial.SwitchMaterial
+        android:id="@+id/switch_dark_theme"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Dark Theme"
+        android:textColor="?attr/colorOnBackground"
+        android:padding="16dp"
+        android:textSize="16sp" />
+
+    <com.google.android.material.switchmaterial.SwitchMaterial
+        android:id="@+id/switch_autoplay"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Autoplay Next Video"
+        android:textColor="?attr/colorOnBackground"
+        android:padding="16dp"
+        android:textSize="16sp" />
+
+</LinearLayout>
