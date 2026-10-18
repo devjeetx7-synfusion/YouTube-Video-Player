@@ -10,6 +10,9 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface VideoDao {
+    @Query("SELECT * FROM videos ORDER BY timestamp DESC")
+    fun getAllVideos(): Flow<List<VideoEntity>>
+
     @Query("SELECT * FROM videos WHERE isFavorite = 1 ORDER BY timestamp DESC")
     fun getFavorites(): Flow<List<VideoEntity>>
 
