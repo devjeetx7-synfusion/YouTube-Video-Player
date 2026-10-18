@@ -16,6 +16,9 @@ interface VideoDao {
     @Query("SELECT * FROM videos WHERE isFavorite = 1 ORDER BY timestamp DESC")
     fun getFavorites(): Flow<List<VideoEntity>>
 
+    @Query("SELECT * FROM videos WHERE url = :url LIMIT 1")
+    suspend fun findVideo(url: String): VideoEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertVideo(video: VideoEntity)
 

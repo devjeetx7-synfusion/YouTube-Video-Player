@@ -9,6 +9,9 @@ import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+import com.cineflow.player.models.VideoEntity
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.navArgs
 import com.cineflow.player.R
@@ -40,6 +43,7 @@ class VideoPlayerFragment : Fragment() {
     private lateinit var btnFavorite: ImageButton
 
     private var isFavorite = false
+    private var playbackErrorShown = false
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -81,7 +85,24 @@ class VideoPlayerFragment : Fragment() {
             initialize(playerContainer, viewLifecycleOwner)
             setOnPlaybackStateChangeListener { state ->
                 when (state) {
-                    PlaybackState.ERROR -> Toast.makeText(context, "Playback Error", Toast.LENGTH_SHORT).show()
+                    PlaybackState.ERROR -> {
+                        if (!isAdded || playbackErrorShown) return@setOnPlaybackStateChangeListener
+                        playbackErrorShown = true
+                        if (resolved is VideoSource.YouTube) {
+                            androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                                .setTitle("YouTube playback unavailable")
+                                .setMessage("This video cannot play in the embedded player. You can try opening it in YouTube.")
+                                .setPositiveButton("Open YouTube") { _, _ ->
+                                    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW,
+                                        android.net.Uri.parse("https://www.youtube.com/watch?v=${resolved.videoId}"))
+                                    try { startActivity(intent) } catch (_: android.content.ActivityNotFoundException) {
+                                        Toast.makeText(context, "No browser available", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                                .setNegativeButton("Cancel", null)
+                                .show()
+                        } else Toast.makeText(context, "Playback Error", Toast.LENGTH_SHORT).show()
+                    }
                     else -> { /* Handle other states if needed for UI */ }
                 }
             }
@@ -89,10 +110,17 @@ class VideoPlayerFragment : Fragment() {
             play()
         }
 
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.favorites.collect { favorites ->
+                isFavorite = favorites.any { it.url == url }
+                updateFavoriteIcon()
+            }
+        }
+
         btnFavorite.setOnClickListener {
             isFavorite = !isFavorite
             updateFavoriteIcon()
-            // Typically would sync with repository here
+            viewModel.toggleFavorite(VideoEntity(url, tvTitle.text.toString(), if (resolved is VideoSource.YouTube) "YouTube" else "Native", if (resolved is VideoSource.YouTube) "https://i.ytimg.com/vi/${resolved.videoId}/hqdefault.jpg" else null, 0L, System.currentTimeMillis(), isFavorite), isFavorite)
             Toast.makeText(context, if(isFavorite) "Added to Favorites" else "Removed from Favorites", Toast.LENGTH_SHORT).show()
         }
 

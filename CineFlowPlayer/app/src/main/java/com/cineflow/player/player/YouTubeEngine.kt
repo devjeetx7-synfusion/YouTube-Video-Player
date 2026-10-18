@@ -24,6 +24,7 @@ class YouTubeEngine(private val context: Context) : PlayerEngine {
     private var currentPosition = 0L
     private var duration = 0L
     private var isPlaying = false
+    private var requestedPlay = false
 
     override fun initialize(container: ViewGroup, lifecycleOwner: LifecycleOwner) {
         youTubePlayerView = YouTubePlayerView(context).apply {
@@ -40,7 +41,7 @@ class YouTubeEngine(private val context: Context) : PlayerEngine {
                 this@YouTubeEngine.youTubePlayer = youTubePlayer
                 isPlayerReady = true
                 currentVideoId?.let {
-                    youTubePlayer.loadVideo(it, 0f)
+                    if (requestedPlay) youTubePlayer.loadVideo(it, 0f) else youTubePlayer.cueVideo(it, 0f)
                 }
             }
 
@@ -93,10 +94,12 @@ class YouTubeEngine(private val context: Context) : PlayerEngine {
     }
 
     override fun play() {
+        requestedPlay = true
         youTubePlayer?.play()
     }
 
     override fun pause() {
+        requestedPlay = false
         youTubePlayer?.pause()
     }
 
