@@ -100,13 +100,13 @@ class AddVideoFragment : Fragment() {
     private fun saveVideo(url: String) {
         val resolved = VideoSourceResolver.resolve(url)
         val source = if (resolved is VideoSource.YouTube) "YouTube" else "Native"
-        val title = "Unknown Title"
+        val title = if (resolved is VideoSource.YouTube) "YouTube Video (${resolved.videoId})" else "Direct Video"
 
         val video = VideoEntity(
             url = url,
             title = title,
             source = source,
-            thumbnailUrl = null,
+            thumbnailUrl = if (resolved is VideoSource.YouTube) "https://i.ytimg.com/vi/${resolved.videoId}/hqdefault.jpg" else null,
             duration = 0L,
             timestamp = System.currentTimeMillis(),
             isFavorite = false
