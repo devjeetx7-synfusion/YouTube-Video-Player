@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.cineflow.player.R
 import com.cineflow.player.adapters.VideoAdapter
+import com.cineflow.player.models.HistoryEntity
 import com.cineflow.player.database.AppDatabase
 import com.cineflow.player.repository.VideoRepository
 import com.cineflow.player.viewmodel.LibraryViewModel
@@ -48,8 +49,8 @@ class LibraryFragment : Fragment() {
         rvLibrary.adapter = adapter
 
         lifecycleScope.launch {
-            viewModel.history.collect { historyList ->
-                adapter.submitList(historyList)
+            viewModel.savedVideos.collect { saved ->
+                adapter.submitList(saved.map { HistoryEntity(it.url, it.title, it.source, it.thumbnailUrl, 0L, it.timestamp) })
             }
         }
     }
