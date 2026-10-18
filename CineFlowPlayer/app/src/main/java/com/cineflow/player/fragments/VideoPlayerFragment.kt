@@ -110,7 +110,7 @@ class VideoPlayerFragment : Fragment() {
             url = url,
             title = tvTitle.text.toString(),
             source = sourceStr,
-            thumbnailUrl = null,
+            thumbnailUrl = if (source is VideoSource.YouTube) "https://i.ytimg.com/vi/${source.videoId}/hqdefault.jpg" else null,
             lastPlaybackPosition = 0L,
             timestamp = System.currentTimeMillis()
         )
@@ -136,7 +136,7 @@ class VideoPlayerFragment : Fragment() {
             url = url,
             title = tvTitle.text.toString(),
             source = sourceStr,
-            thumbnailUrl = null,
+            thumbnailUrl = if (resolved is VideoSource.YouTube) "https://i.ytimg.com/vi/${resolved.videoId}/hqdefault.jpg" else null,
             lastPlaybackPosition = pos,
             timestamp = System.currentTimeMillis()
         )
