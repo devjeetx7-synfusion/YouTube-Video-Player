@@ -32,12 +32,14 @@ object VideoSourceResolver {
         val host = uri.host?.lowercase() ?: return VideoSource.Invalid
 
         // Check for YouTube
-        if (host.contains("youtube.com") || host.contains("youtu.be")) {
+        if (host in setOf("youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be", "www.youtu.be")) {
             val videoId = extractYouTubeId(uri, host, uri.path)
-            if (videoId != null) {
+            if (videoId != null && Regex("[A-Za-z0-9_-]{11}").matches(videoId)) {
                 return VideoSource.YouTube(videoId)
             }
         }
+
+        if (host in setOf("youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be", "www.youtu.be")) return VideoSource.Invalid
 
         // Native
         val path = uri.path?.lowercase() ?: ""
@@ -52,12 +54,12 @@ object VideoSourceResolver {
     }
 
     private fun extractYouTubeId(uri: Uri, host: String, path: String?): String? {
-        if (host.contains("youtu.be")) {
+        if (host == "youtu.be" || host == "www.youtu.be") {
             val segments = uri.pathSegments
             if (segments.isNotEmpty()) {
                 return segments[0]
             }
-        } else if (host.contains("youtube.com")) {
+        } else if (host.endsWith("youtube.com")) {
             if (path == "/watch") {
                 return uri.getQueryParameter("v")
             } else if (path != null && path.startsWith("/shorts/")) {

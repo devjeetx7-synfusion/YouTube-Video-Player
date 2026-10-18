@@ -7,6 +7,7 @@ import com.cineflow.player.repository.VideoRepository
 import kotlinx.coroutines.launch
 
 class LibraryViewModel(private val repository: VideoRepository) : ViewModel() {
+    val savedVideos = repository.getAllVideos()
     val history = repository.getHistory()
     val playlists = repository.getAllPlaylists()
 

@@ -33,11 +33,9 @@ class VideoAdapter(private val onVideoClick: (HistoryEntity) -> Unit) :
             title.text = video.title
             source.text = video.source
 
-            video.thumbnailUrl?.let {
-                Glide.with(itemView.context)
-                    .load(it)
-                    .into(thumbnail)
-            }
+            val thumbnailUrl = video.thumbnailUrl ?: Regex("(?:youtu\\.be/|[?&]v=|/shorts/|/live/|/embed/)([A-Za-z0-9_-]{11})")
+                .find(video.url)?.groupValues?.getOrNull(1)?.let { "https://i.ytimg.com/vi/$it/hqdefault.jpg" }
+            Glide.with(itemView.context).load(thumbnailUrl).into(thumbnail)
 
             itemView.setOnClickListener {
                 onVideoClick(video)
