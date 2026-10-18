@@ -43,6 +43,7 @@ class VideoPlayerFragment : Fragment() {
     private lateinit var btnFavorite: ImageButton
 
     private var isFavorite = false
+    private var playbackErrorShown = false
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -85,6 +86,8 @@ class VideoPlayerFragment : Fragment() {
             setOnPlaybackStateChangeListener { state ->
                 when (state) {
                     PlaybackState.ERROR -> {
+                        if (!isAdded || playbackErrorShown) return@setOnPlaybackStateChangeListener
+                        playbackErrorShown = true
                         if (resolved is VideoSource.YouTube) {
                             androidx.appcompat.app.AlertDialog.Builder(requireContext())
                                 .setTitle("YouTube playback unavailable")
