@@ -10,17 +10,29 @@ android {
     namespace = "com.cineflow.player"
     compileSdk = 34
 
+    signingConfigs {
+        create("testConfig") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     defaultConfig {
         applicationId = "com.cineflow.player"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
+        versionCode = project.findProperty("versionCode")?.toString()?.toIntOrNull() ?: 1
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("testConfig")
+        }
         release {
             isMinifyEnabled = true
             proguardFiles(
