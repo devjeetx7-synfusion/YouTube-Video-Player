@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.CineFlowPlayer" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/accent</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorPrimaryContainer">@color/secondary_surface</item>
+        <item name="colorOnPrimaryContainer">@color/primary_text</item>
+
+        <item name="colorSecondary">@color/secondary_surface</item>
+        <item name="colorOnSecondary">@color/primary_text</item>
+
+        <item name="android:colorBackground">@color/primary_background</item>
+        <item name="colorSurface">@color/secondary_surface</item>
+        <item name="colorOnBackground">@color/primary_text</item>
+        <item name="colorOnSurface">@color/primary_text</item>
+
+        <item name="android:statusBarColor">@color/primary_background</item>
+        <item name="android:navigationBarColor">@color/secondary_surface</item>
+    </style>
+
+    <style name="Theme.CineFlowPlayer.NoActionBar" parent="Theme.CineFlowPlayer">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+</resources>
