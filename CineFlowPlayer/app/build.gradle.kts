@@ -72,7 +72,7 @@ dependencies {
     implementation("androidx.media3:media3-session:1.2.0")
 
     // YouTube Player API
-    implementation("com.pierfrancescosoffritti.androidyoutubeplayer:core:12.1.0")
+    implementation("com.pierfrancescosoffritti.androidyoutubeplayer:core:13.0.0")
 
     // Room Database
     implementation("androidx.room:room-runtime:2.6.0")
