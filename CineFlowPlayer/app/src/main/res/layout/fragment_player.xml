@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?android:colorBackground">
+    android:background="@color/primary_background">
 
     <FrameLayout
         android:id="@+id/player_container"
@@ -13,14 +13,64 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:background="@android:color/black" />
+        android:background="@android:color/black">
+
+        <ProgressBar
+            android:id="@+id/pb_loading"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center"
+            android:indeterminateTint="@color/accent"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:id="@+id/layout_error"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:background="@color/secondary_surface"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tv_error_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Playback Error"
+                android:textColor="@color/primary_text"
+                android:textSize="16sp"
+                android:gravity="center" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_retry"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="Retry"
+                app:backgroundTint="@color/accent"
+                android:textColor="@color/white" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_open_external"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Watch on YouTube"
+                android:textColor="@color/primary_text"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+    </FrameLayout>
 
     <TextView
         android:id="@+id/tv_video_title"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Video Title"
-        android:textColor="?attr/colorOnBackground"
+        android:text="Loading..."
+        android:textColor="@color/primary_text"
         android:textSize="20sp"
         android:textStyle="bold"
         android:layout_margin="16dp"
@@ -33,7 +83,7 @@
         android:layout_width="48dp"
         android:layout_height="48dp"
         android:background="?attr/selectableItemBackgroundBorderless"
-        android:src="@android:drawable/btn_star"
+        android:src="@android:drawable/btn_star_big_off"
         app:layout_constraintTop_toTopOf="@id/tv_video_title"
         app:layout_constraintBottom_toBottomOf="@id/tv_video_title"
         app:layout_constraintEnd_toEndOf="parent"
@@ -43,9 +93,9 @@
         android:id="@+id/tv_source_badge"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="YouTube"
-        android:textColor="?attr/colorOnPrimary"
-        android:background="?attr/colorPrimary"
+        android:text="Source"
+        android:textColor="@color/white"
+        android:background="@color/accent"
         android:paddingHorizontal="8dp"
         android:paddingVertical="4dp"
         android:textSize="12sp"

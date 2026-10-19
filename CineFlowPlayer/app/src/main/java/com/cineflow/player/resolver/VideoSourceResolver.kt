@@ -14,6 +14,17 @@ enum class NativeType {
 
 object VideoSourceResolver {
 
+    private val YOUTUBE_HOSTS = setOf(
+        "youtube.com",
+        "www.youtube.com",
+        "m.youtube.com",
+        "music.youtube.com",
+        "youtu.be",
+        "www.youtu.be"
+    )
+
+    private val YOUTUBE_ID_REGEX = Regex("^[A-Za-z0-9_-]{11}$")
+
     fun resolve(url: String): VideoSource {
         if (url.isBlank()) return VideoSource.Invalid
 
@@ -23,25 +34,24 @@ object VideoSourceResolver {
             return VideoSource.Invalid
         }
 
-        // Must be http or https
-        val scheme = uri.scheme
+        val scheme = uri.scheme?.lowercase()
         if (scheme != "http" && scheme != "https") {
             return VideoSource.Invalid
         }
 
         val host = uri.host?.lowercase() ?: return VideoSource.Invalid
 
-        // Check for YouTube
-        if (host in setOf("youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be", "www.youtu.be")) {
+        // Check for YouTube domain
+        if (YOUTUBE_HOSTS.any { host == it || host.endsWith(".$it") }) {
             val videoId = extractYouTubeId(uri, host, uri.path)
-            if (videoId != null && Regex("[A-Za-z0-9_-]{11}").matches(videoId)) {
-                return VideoSource.YouTube(videoId)
+            return if (videoId != null && YOUTUBE_ID_REGEX.matches(videoId)) {
+                VideoSource.YouTube(videoId)
+            } else {
+                VideoSource.Invalid
             }
         }
 
-        if (host in setOf("youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be", "www.youtu.be")) return VideoSource.Invalid
-
-        // Native
+        // Direct Native media
         val path = uri.path?.lowercase() ?: ""
         val type = when {
             path.endsWith(".m3u8") -> NativeType.HLS
@@ -57,20 +67,22 @@ object VideoSourceResolver {
         if (host == "youtu.be" || host == "www.youtu.be") {
             val segments = uri.pathSegments
             if (segments.isNotEmpty()) {
-                return segments[0]
+                val candidate = segments[0]
+                return if (candidate.contains("?")) candidate.substringBefore("?") else candidate
             }
-        } else if (host.endsWith("youtube.com")) {
-            if (path == "/watch") {
-                return uri.getQueryParameter("v")
-            } else if (path != null && path.startsWith("/shorts/")) {
+        } else if (host.contains("youtube.com")) {
+            val vParam = uri.getQueryParameter("v")
+            if (!vParam.isNullOrBlank()) {
+                return vParam
+            }
+
+            if (path != null) {
                 val segments = uri.pathSegments
-                if (segments.size > 1) return segments[1]
-            } else if (path != null && path.startsWith("/live/")) {
-                val segments = uri.pathSegments
-                if (segments.size > 1) return segments[1]
-            } else if (path != null && path.startsWith("/embed/")) {
-                val segments = uri.pathSegments
-                if (segments.size > 1) return segments[1]
+                if (segments.size >= 2) {
+                    when (segments[0].lowercase()) {
+                        "shorts", "live", "embed", "v" -> return segments[1]
+                    }
+                }
             }
         }
         return null

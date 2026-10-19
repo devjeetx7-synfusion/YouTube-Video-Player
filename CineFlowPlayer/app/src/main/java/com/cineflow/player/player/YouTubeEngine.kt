@@ -8,9 +8,10 @@ import androidx.lifecycle.LifecycleOwner
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstants
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.AbstractYouTubePlayerListener
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.options.IFramePlayerOptions
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
-import com.cineflow.player.resolver.VideoSourceResolver
 import com.cineflow.player.resolver.VideoSource
+import com.cineflow.player.resolver.VideoSourceResolver
 
 class YouTubeEngine(private val context: Context) : PlayerEngine {
 
@@ -25,8 +26,13 @@ class YouTubeEngine(private val context: Context) : PlayerEngine {
     private var duration = 0L
     private var isPlaying = false
     private var requestedPlay = false
+    private var pendingSeekPositionMs: Long? = null
 
     override fun initialize(container: ViewGroup, lifecycleOwner: LifecycleOwner) {
+        if (youTubePlayerView != null) {
+            release()
+        }
+
         youTubePlayerView = YouTubePlayerView(context).apply {
             layoutParams = FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -36,19 +42,31 @@ class YouTubeEngine(private val context: Context) : PlayerEngine {
 
         lifecycleOwner.lifecycle.addObserver(youTubePlayerView!!)
 
-        youTubePlayerView?.addYouTubePlayerListener(object : AbstractYouTubePlayerListener() {
+        val listener = object : AbstractYouTubePlayerListener() {
             override fun onReady(youTubePlayer: YouTubePlayer) {
+                Log.d("CineFlowYouTube", "YouTubePlayer onReady")
                 this@YouTubeEngine.youTubePlayer = youTubePlayer
                 isPlayerReady = true
-                currentVideoId?.let {
-                    if (requestedPlay) youTubePlayer.loadVideo(it, 0f) else youTubePlayer.cueVideo(it, 0f)
+
+                currentVideoId?.let { videoId ->
+                    val startSeconds = pendingSeekPositionMs?.let { it / 1000f } ?: 0f
+                    pendingSeekPositionMs = null
+                    if (requestedPlay) {
+                        youTubePlayer.loadVideo(videoId, startSeconds)
+                    } else {
+                        youTubePlayer.cueVideo(videoId, startSeconds)
+                    }
                 }
             }
 
             override fun onStateChange(youTubePlayer: YouTubePlayer, state: PlayerConstants.PlayerState) {
+                Log.d("CineFlowYouTube", "Player state changed: $state")
                 val playbackState = when (state) {
                     PlayerConstants.PlayerState.UNSTARTED -> PlaybackState.IDLE
-                    PlayerConstants.PlayerState.ENDED -> PlaybackState.ENDED
+                    PlayerConstants.PlayerState.ENDED -> {
+                        isPlaying = false
+                        PlaybackState.ENDED
+                    }
                     PlayerConstants.PlayerState.PLAYING -> {
                         isPlaying = true
                         PlaybackState.PLAYING
@@ -66,6 +84,7 @@ class YouTubeEngine(private val context: Context) : PlayerEngine {
 
             override fun onError(youTubePlayer: YouTubePlayer, error: PlayerConstants.PlayerError) {
                 Log.e("CineFlowYouTube", "IFrame player error: $error; videoId=$currentVideoId")
+                isPlaying = false
                 stateListener?.invoke(PlaybackState.ERROR)
             }
 
@@ -76,17 +95,39 @@ class YouTubeEngine(private val context: Context) : PlayerEngine {
             override fun onVideoDuration(youTubePlayer: YouTubePlayer, duration: Float) {
                 this@YouTubeEngine.duration = (duration * 1000).toLong()
             }
-        })
+        }
 
+        val iFramePlayerOptions = IFramePlayerOptions.Builder()
+            .controls(1)
+            .fullscreen(1)
+            .rel(0)
+            .origin("https://www.youtube.com")
+            .build()
+
+        youTubePlayerView?.initialize(listener, false, iFramePlayerOptions)
         container.addView(youTubePlayerView)
     }
 
     override fun loadVideo(url: String) {
         val resolved = VideoSourceResolver.resolve(url)
         if (resolved is VideoSource.YouTube) {
-            currentVideoId = resolved.videoId
+            val newVideoId = resolved.videoId
+            if (newVideoId == currentVideoId && isPlayerReady) {
+                pendingSeekPositionMs?.let {
+                    youTubePlayer?.seekTo(it / 1000f)
+                    pendingSeekPositionMs = null
+                }
+                return
+            }
+            currentVideoId = newVideoId
             if (isPlayerReady) {
-                youTubePlayer?.loadVideo(resolved.videoId, 0f)
+                val startSeconds = pendingSeekPositionMs?.let { it / 1000f } ?: 0f
+                pendingSeekPositionMs = null
+                if (requestedPlay) {
+                    youTubePlayer?.loadVideo(newVideoId, startSeconds)
+                } else {
+                    youTubePlayer?.cueVideo(newVideoId, startSeconds)
+                }
             }
         } else {
             stateListener?.invoke(PlaybackState.ERROR)
@@ -95,25 +136,36 @@ class YouTubeEngine(private val context: Context) : PlayerEngine {
 
     override fun play() {
         requestedPlay = true
-        youTubePlayer?.play()
+        if (isPlayerReady) {
+            youTubePlayer?.play()
+        }
     }
 
     override fun pause() {
         requestedPlay = false
-        youTubePlayer?.pause()
+        if (isPlayerReady) {
+            youTubePlayer?.pause()
+        }
     }
 
     override fun seekTo(positionMs: Long) {
-        youTubePlayer?.seekTo(positionMs / 1000f)
+        if (isPlayerReady) {
+            youTubePlayer?.seekTo(positionMs / 1000f)
+        } else {
+            pendingSeekPositionMs = positionMs
+        }
     }
 
     override fun setPlaybackSpeed(speed: Float) {
+        // IFrame Player API playback rate if supported
     }
 
     override fun release() {
         youTubePlayerView?.release()
         youTubePlayerView = null
         youTubePlayer = null
+        isPlayerReady = false
+        isPlaying = false
     }
 
     override fun getCurrentPosition(): Long {
