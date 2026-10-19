@@ -19,11 +19,15 @@ class NativeEngine(private val context: Context) : PlayerEngine {
     private var exoPlayer: ExoPlayer? = null
     private var playerView: PlayerView? = null
     private var stateListener: ((PlaybackState) -> Unit)? = null
+    private var playerListener: Player.Listener? = null
+    private var isReleased = false
 
     override fun initialize(container: ViewGroup, lifecycleOwner: LifecycleOwner) {
-        if (exoPlayer != null) {
+        if (exoPlayer != null || playerView != null) {
             release()
         }
+
+        isReleased = false
 
         playerView = PlayerView(context).apply {
             layoutParams = FrameLayout.LayoutParams(
@@ -33,72 +37,92 @@ class NativeEngine(private val context: Context) : PlayerEngine {
             useController = true
         }
 
+        container.addView(playerView)
+
         val audioAttributes = AudioAttributes.Builder()
             .setUsage(C.USAGE_MEDIA)
             .setContentType(C.AUDIO_CONTENT_TYPE_MOVIE)
             .build()
 
+        playerListener = object : Player.Listener {
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                if (isReleased) return
+                val state = when (playbackState) {
+                    Player.STATE_IDLE -> PlaybackState.IDLE
+                    Player.STATE_BUFFERING -> PlaybackState.BUFFERING
+                    Player.STATE_READY -> if (exoPlayer?.playWhenReady == true) PlaybackState.PLAYING else PlaybackState.PAUSED
+                    Player.STATE_ENDED -> PlaybackState.ENDED
+                    else -> PlaybackState.IDLE
+                }
+                stateListener?.invoke(state)
+            }
+
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                if (isReleased) return
+                val state = if (isPlaying) PlaybackState.PLAYING else PlaybackState.PAUSED
+                stateListener?.invoke(state)
+            }
+
+            override fun onPlayerError(error: PlaybackException) {
+                if (isReleased) return
+                Log.e("CineFlowNativeEngine", "ExoPlayer error: ${error.message}", error)
+                stateListener?.invoke(PlaybackState.ERROR)
+            }
+        }
+
         exoPlayer = ExoPlayer.Builder(context)
             .setAudioAttributes(audioAttributes, true)
             .setHandleAudioBecomingNoisy(true)
             .build().apply {
-                addListener(object : Player.Listener {
-                    override fun onPlaybackStateChanged(playbackState: Int) {
-                        val state = when (playbackState) {
-                            Player.STATE_IDLE -> PlaybackState.IDLE
-                            Player.STATE_BUFFERING -> PlaybackState.BUFFERING
-                            Player.STATE_READY -> if (playWhenReady) PlaybackState.PLAYING else PlaybackState.PAUSED
-                            Player.STATE_ENDED -> PlaybackState.ENDED
-                            else -> PlaybackState.IDLE
-                        }
-                        stateListener?.invoke(state)
-                    }
-
-                    override fun onIsPlayingChanged(isPlaying: Boolean) {
-                        val state = if (isPlaying) PlaybackState.PLAYING else PlaybackState.PAUSED
-                        stateListener?.invoke(state)
-                    }
-
-                    override fun onPlayerError(error: PlaybackException) {
-                        Log.e("CineFlowNativeEngine", "ExoPlayer error: ${error.message}", error)
-                        stateListener?.invoke(PlaybackState.ERROR)
-                    }
-                })
+                playerListener?.let { addListener(it) }
             }
 
         playerView?.player = exoPlayer
-        container.addView(playerView)
     }
 
     override fun loadVideo(url: String) {
+        if (isReleased) return
         val mediaItem = MediaItem.fromUri(Uri.parse(url))
         exoPlayer?.setMediaItem(mediaItem)
         exoPlayer?.prepare()
     }
 
     override fun play() {
+        if (isReleased) return
         exoPlayer?.playWhenReady = true
         exoPlayer?.play()
     }
 
     override fun pause() {
+        if (isReleased) return
         exoPlayer?.pause()
     }
 
     override fun seekTo(positionMs: Long) {
+        if (isReleased) return
         exoPlayer?.seekTo(positionMs)
     }
 
     override fun setPlaybackSpeed(speed: Float) {
+        if (isReleased) return
         if (speed > 0f) {
             exoPlayer?.setPlaybackSpeed(speed)
         }
     }
 
     override fun release() {
+        isReleased = true
+        stateListener = null
+
+        playerListener?.let {
+            exoPlayer?.removeListener(it)
+        }
+        playerListener = null
+
         exoPlayer?.stop()
         exoPlayer?.release()
         exoPlayer = null
+
         playerView?.player = null
         playerView = null
     }

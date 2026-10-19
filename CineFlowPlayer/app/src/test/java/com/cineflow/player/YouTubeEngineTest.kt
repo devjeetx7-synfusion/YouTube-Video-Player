@@ -1,6 +1,8 @@
 package com.cineflow.player
 
+import com.cineflow.player.player.PlaybackState
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.options.IFramePlayerOptions
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -19,5 +21,15 @@ class YouTubeEngineTest {
             .origin("https://www.youtube.com")
             .build()
         assertNotNull(options)
+    }
+
+    @Test
+    fun testPlaybackStateEnumValues() {
+        assertEquals(PlaybackState.IDLE, PlaybackState.valueOf("IDLE"))
+        assertEquals(PlaybackState.BUFFERING, PlaybackState.valueOf("BUFFERING"))
+        assertEquals(PlaybackState.PLAYING, PlaybackState.valueOf("PLAYING"))
+        assertEquals(PlaybackState.PAUSED, PlaybackState.valueOf("PAUSED"))
+        assertEquals(PlaybackState.ENDED, PlaybackState.valueOf("ENDED"))
+        assertEquals(PlaybackState.ERROR, PlaybackState.valueOf("ERROR"))
     }
 }

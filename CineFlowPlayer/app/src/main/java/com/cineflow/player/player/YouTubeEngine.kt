@@ -18,9 +18,11 @@ class YouTubeEngine(private val context: Context) : PlayerEngine {
     private var youTubePlayerView: YouTubePlayerView? = null
     private var youTubePlayer: YouTubePlayer? = null
     private var stateListener: ((PlaybackState) -> Unit)? = null
+    private var currentLifecycleOwner: LifecycleOwner? = null
 
     private var currentVideoId: String? = null
     private var isPlayerReady = false
+    private var isReleased = false
 
     private var currentPosition = 0L
     private var duration = 0L
@@ -33,17 +35,23 @@ class YouTubeEngine(private val context: Context) : PlayerEngine {
             release()
         }
 
+        isReleased = false
+        currentLifecycleOwner = lifecycleOwner
+
         youTubePlayerView = YouTubePlayerView(context).apply {
+            enableAutomaticInitialization = false
             layoutParams = FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
         }
 
+        container.addView(youTubePlayerView)
         lifecycleOwner.lifecycle.addObserver(youTubePlayerView!!)
 
         val listener = object : AbstractYouTubePlayerListener() {
             override fun onReady(youTubePlayer: YouTubePlayer) {
+                if (isReleased) return
                 Log.d("CineFlowYouTube", "YouTubePlayer onReady")
                 this@YouTubeEngine.youTubePlayer = youTubePlayer
                 isPlayerReady = true
@@ -60,6 +68,7 @@ class YouTubeEngine(private val context: Context) : PlayerEngine {
             }
 
             override fun onStateChange(youTubePlayer: YouTubePlayer, state: PlayerConstants.PlayerState) {
+                if (isReleased) return
                 Log.d("CineFlowYouTube", "Player state changed: $state")
                 val playbackState = when (state) {
                     PlayerConstants.PlayerState.UNSTARTED -> PlaybackState.IDLE
@@ -83,16 +92,19 @@ class YouTubeEngine(private val context: Context) : PlayerEngine {
             }
 
             override fun onError(youTubePlayer: YouTubePlayer, error: PlayerConstants.PlayerError) {
+                if (isReleased) return
                 Log.e("CineFlowYouTube", "IFrame player error: $error; videoId=$currentVideoId")
                 isPlaying = false
                 stateListener?.invoke(PlaybackState.ERROR)
             }
 
             override fun onCurrentSecond(youTubePlayer: YouTubePlayer, second: Float) {
+                if (isReleased) return
                 currentPosition = (second * 1000).toLong()
             }
 
             override fun onVideoDuration(youTubePlayer: YouTubePlayer, duration: Float) {
+                if (isReleased) return
                 this@YouTubeEngine.duration = (duration * 1000).toLong()
             }
         }
@@ -105,10 +117,10 @@ class YouTubeEngine(private val context: Context) : PlayerEngine {
             .build()
 
         youTubePlayerView?.initialize(listener, false, iFramePlayerOptions)
-        container.addView(youTubePlayerView)
     }
 
     override fun loadVideo(url: String) {
+        if (isReleased) return
         val resolved = VideoSourceResolver.resolve(url)
         if (resolved is VideoSource.YouTube) {
             val newVideoId = resolved.videoId
@@ -135,6 +147,7 @@ class YouTubeEngine(private val context: Context) : PlayerEngine {
     }
 
     override fun play() {
+        if (isReleased) return
         requestedPlay = true
         if (isPlayerReady) {
             youTubePlayer?.play()
@@ -142,6 +155,7 @@ class YouTubeEngine(private val context: Context) : PlayerEngine {
     }
 
     override fun pause() {
+        if (isReleased) return
         requestedPlay = false
         if (isPlayerReady) {
             youTubePlayer?.pause()
@@ -149,6 +163,7 @@ class YouTubeEngine(private val context: Context) : PlayerEngine {
     }
 
     override fun seekTo(positionMs: Long) {
+        if (isReleased) return
         if (isPlayerReady) {
             youTubePlayer?.seekTo(positionMs / 1000f)
         } else {
@@ -161,9 +176,17 @@ class YouTubeEngine(private val context: Context) : PlayerEngine {
     }
 
     override fun release() {
-        youTubePlayerView?.release()
+        isReleased = true
+        stateListener = null
+
+        youTubePlayerView?.let { view ->
+            currentLifecycleOwner?.lifecycle?.removeObserver(view)
+            view.release()
+        }
+
         youTubePlayerView = null
         youTubePlayer = null
+        currentLifecycleOwner = null
         isPlayerReady = false
         isPlaying = false
     }
