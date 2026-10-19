@@ -24,6 +24,8 @@ class VideoRepository(
 
     fun getHistory(): Flow<List<HistoryEntity>> = videoDao.getHistory()
 
+    suspend fun findHistory(url: String): HistoryEntity? = videoDao.findHistory(url)
+
     suspend fun insertHistory(history: HistoryEntity) = videoDao.insertHistory(history)
 
     suspend fun deleteHistory(url: String) = videoDao.deleteHistory(url)

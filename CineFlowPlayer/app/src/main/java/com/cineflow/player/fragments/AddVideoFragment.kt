@@ -13,7 +13,6 @@ import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.cineflow.player.R
 import com.cineflow.player.database.AppDatabase
-import com.cineflow.player.models.VideoEntity
 import com.cineflow.player.repository.VideoRepository
 import com.cineflow.player.resolver.VideoSource
 import com.cineflow.player.resolver.VideoSourceResolver
@@ -69,7 +68,16 @@ class AddVideoFragment : Fragment() {
         btnSave.setOnClickListener {
             val url = etUrl.text.toString().trim()
             if (validateUrl(url)) {
-                saveVideo(url)
+                btnSave.isEnabled = false
+                viewModel.saveVideo(url) {
+                    if (isAdded) {
+                        etUrl.text?.clear()
+                        tvError.text = "Video saved to library!"
+                        tvError.setTextColor(resources.getColor(R.color.accent, null))
+                        tvError.visibility = View.VISIBLE
+                        btnSave.isEnabled = true
+                    }
+                }
             }
         }
     }
@@ -85,6 +93,7 @@ class AddVideoFragment : Fragment() {
         val resolved = VideoSourceResolver.resolve(url)
         if (resolved is VideoSource.Invalid) {
             tvError.text = "Invalid or unsupported video URL"
+            tvError.setTextColor(resources.getColor(R.color.accent, null))
             tvError.visibility = View.VISIBLE
             btnPlayNow.isEnabled = false
             btnSave.isEnabled = false
@@ -95,28 +104,6 @@ class AddVideoFragment : Fragment() {
         btnPlayNow.isEnabled = true
         btnSave.isEnabled = true
         return true
-    }
-
-    private fun saveVideo(url: String) {
-        val resolved = VideoSourceResolver.resolve(url)
-        val source = if (resolved is VideoSource.YouTube) "YouTube" else "Native"
-        val title = if (resolved is VideoSource.YouTube) "YouTube Video (${resolved.videoId})" else "Direct Video"
-
-        val video = VideoEntity(
-            url = url,
-            title = title,
-            source = source,
-            thumbnailUrl = if (resolved is VideoSource.YouTube) "https://i.ytimg.com/vi/${resolved.videoId}/hqdefault.jpg" else null,
-            duration = 0L,
-            timestamp = System.currentTimeMillis(),
-            isFavorite = false
-        )
-        viewModel.saveVideo(video)
-
-        etUrl.text?.clear()
-        tvError.text = "Video saved to library!"
-        tvError.setTextColor(resources.getColor(R.color.accent, null))
-        tvError.visibility = View.VISIBLE
     }
 
     private fun navigateToPlayer(url: String) {

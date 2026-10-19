@@ -28,6 +28,9 @@ interface VideoDao {
     @Query("SELECT * FROM history ORDER BY timestamp DESC")
     fun getHistory(): Flow<List<HistoryEntity>>
 
+    @Query("SELECT * FROM history WHERE url = :url LIMIT 1")
+    suspend fun findHistory(url: String): HistoryEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertHistory(history: HistoryEntity)
 
