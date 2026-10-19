@@ -113,7 +113,6 @@ class YouTubeEngine(private val context: Context) : PlayerEngine {
             .controls(1)
             .fullscreen(1)
             .rel(0)
-            .origin("https://www.youtube.com")
             .build()
 
         youTubePlayerView?.initialize(listener, false, iFramePlayerOptions)
