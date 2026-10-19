@@ -61,6 +61,7 @@ class VideoPlayerFragment : Fragment() {
     private var playbackErrorShown = false
     private var currentThumbnailUrl: String? = null
     private var isEngineInitialized = false
+    private var initialSeekPerformed = false
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -117,7 +118,8 @@ class VideoPlayerFragment : Fragment() {
                 }
                 launch {
                     viewModel.savedPosition.collect { pos ->
-                        if (pos > 0L) {
+                        if (pos > 0L && !initialSeekPerformed) {
+                            initialSeekPerformed = true
                             playerEngine?.seekTo(pos)
                         }
                     }
@@ -180,7 +182,7 @@ class VideoPlayerFragment : Fragment() {
         playerEngine?.apply {
             initialize(playerContainer, viewLifecycleOwner)
             setOnPlaybackStateChangeListener { state ->
-                if (!isAdded) return@setOnPlaybackStateChangeListener
+                if (!isAdded || view == null) return@setOnPlaybackStateChangeListener
                 when (state) {
                     PlaybackState.BUFFERING -> {
                         pbLoading.visibility = View.VISIBLE
@@ -216,7 +218,7 @@ class VideoPlayerFragment : Fragment() {
     }
 
     private fun showExternalDialog(videoId: String) {
-        if (!isAdded) return
+        if (!isAdded || context == null) return
         AlertDialog.Builder(requireContext())
             .setTitle("YouTube Playback Notice")
             .setMessage("This video prohibits embedded playback or requires opening directly in YouTube.")
@@ -276,6 +278,7 @@ class VideoPlayerFragment : Fragment() {
         super.onDestroyView()
         playerEngine?.release()
         playerEngine = null
+        playerContainer.removeAllViews()
         isEngineInitialized = false
     }
 }

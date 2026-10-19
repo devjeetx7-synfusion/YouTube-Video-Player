@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/primary_background"
+    android:padding="16dp"
+    tools:context=".activities.CrashReportActivity">
+
+    <!-- Title Header -->
+    <TextView
+        android:id="@+id/tv_crash_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Crash Report"
+        android:textColor="@color/accent"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="4dp" />
+
+    <TextView
+        android:id="@+id/tv_crash_subtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="CineFlow Player unexpectedly closed during previous session."
+        android:textColor="@color/secondary_text"
+        android:textSize="14sp"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Crash Report Content Container -->
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginBottom="16dp"
+        app:cardBackgroundColor="@color/secondary_surface"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="2dp"
+        app:strokeWidth="0dp">
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="12dp">
+
+            <TextView
+                android:id="@+id/tv_crash_details"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="monospace"
+                android:textColor="@color/primary_text"
+                android:textSize="12sp"
+                tools:text="Exception: java.lang.NullPointerException..." />
+        </ScrollView>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Action Buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:weightSum="4">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_copy"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:text="Copy"
+            android:textColor="@color/accent"
+            app:strokeColor="@color/accent" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_share"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp"
+            android:text="Share"
+            android:textColor="@color/accent"
+            app:strokeColor="@color/accent" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_dismiss"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp"
+            android:text="Dismiss"
+            android:textColor="@color/secondary_text"
+            app:strokeColor="@color/secondary_text" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_restart"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:text="Restart"
+            android:backgroundTint="@color/accent"
+            android:textColor="@color/white" />
+    </LinearLayout>
+
+</LinearLayout>
