@@ -122,7 +122,7 @@ class WebViewYouTubeEngine(private val context: Context) : PlayerEngine {
         if (isReleased) return
         val safePosition = positionMs.coerceAtLeast(0L)
         if (playerReady && loadedVideoId == currentVideoId) {
-            evaluate("window.CineFlowPlayer && window.CineFlowPlayer.seekTo(\u0024{safePosition / 1000.0});")
+            evaluate("window.CineFlowPlayer && window.CineFlowPlayer.seekTo(${safePosition / 1000.0});")
         } else {
             pendingSeekPositionMs = safePosition
         }
