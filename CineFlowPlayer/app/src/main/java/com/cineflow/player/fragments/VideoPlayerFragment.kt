@@ -116,7 +116,6 @@ class VideoPlayerFragment : Fragment() {
                 val duration = playerEngine?.getDuration() ?: 0L
                 if (duration > 0L) playerEngine?.seekTo(duration * (bar?.progress ?: 0) / 1000L)
                 isUserSeeking = false
-                updatePlaybackProgress()
             }
         })
 
