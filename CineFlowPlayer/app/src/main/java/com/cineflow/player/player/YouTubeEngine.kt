@@ -110,7 +110,7 @@ class YouTubeEngine(private val context: Context) : PlayerEngine {
         }
 
         val iFramePlayerOptions = IFramePlayerOptions.Builder()
-            .controls(1)
+            .controls(0)
             .fullscreen(1)
             .rel(0)
             .origin("https://www.youtube.com")
