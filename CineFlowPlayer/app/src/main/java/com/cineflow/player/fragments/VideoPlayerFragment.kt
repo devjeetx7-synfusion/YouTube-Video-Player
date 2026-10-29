@@ -207,6 +207,12 @@ class VideoPlayerFragment : Fragment() {
     }
 
     private fun setupPlayer(url: String, resolved: VideoSource) {
+        stopProgressUpdates()
+        isUserSeeking = false
+        seekBar.progress = 0
+        tvCurrentTime.text = "00:00"
+        tvTotalTime.text = "00:00"
+        customControls.visibility = if (resolved is VideoSource.YouTube) View.VISIBLE else View.GONE
         playerEngine?.release()
         playerContainer.removeAllViews()
 
@@ -229,9 +235,11 @@ class VideoPlayerFragment : Fragment() {
                         pbLoading.visibility = View.GONE
                         layoutError.visibility = View.GONE
                         playbackErrorShown = false
+                        updatePlayPauseLabel()
                     }
                     PlaybackState.PAUSED, PlaybackState.ENDED, PlaybackState.IDLE -> {
                         pbLoading.visibility = View.GONE
+                        updatePlayPauseLabel()
                     }
                     PlaybackState.ERROR -> {
                         pbLoading.visibility = View.GONE
@@ -252,6 +260,7 @@ class VideoPlayerFragment : Fragment() {
             play()
         }
         isEngineInitialized = true
+        if (resolved is VideoSource.YouTube) startProgressUpdates()
     }
 
 
@@ -357,6 +366,7 @@ class VideoPlayerFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        stopProgressUpdates()
         super.onDestroyView()
         playerEngine?.release()
         playerEngine = null
