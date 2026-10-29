@@ -1,9 +1,13 @@
 package com.cineflow.player.player
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
 import android.util.Log
 import android.view.ViewGroup
+import android.view.View
+import android.view.WindowManager
+import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
@@ -32,6 +36,10 @@ class WebViewYouTubeEngine(private val context: Context) : PlayerEngine {
     private var lastReportedState: PlaybackState? = null
     private val handler = android.os.Handler(android.os.Looper.getMainLooper())
     private var pollTask: Runnable? = null
+    private var fullscreenView: View? = null
+    private var fullscreenCallback: WebChromeClient.CustomViewCallback? = null
+    private var fullscreenDecor: FrameLayout? = null
+    private var originalSystemUiVisibility = 0
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun initialize(container: ViewGroup, lifecycleOwner: LifecycleOwner) {
@@ -63,6 +71,38 @@ class WebViewYouTubeEngine(private val context: Context) : PlayerEngine {
             settings.setSupportZoom(false)
             settings.builtInZoomControls = false
             settings.displayZoomControls = false
+            webChromeClient = object : WebChromeClient() {
+                override fun onShowCustomView(view: View, callback: CustomViewCallback) {
+                    val activity = context as? Activity
+                    val decor = activity?.window?.decorView as? FrameLayout
+                    if (activity == null || decor == null || fullscreenView != null) {
+                        callback.onCustomViewHidden()
+                        return
+                    }
+                    fullscreenView = view
+                    fullscreenCallback = callback
+                    fullscreenDecor = decor
+                    originalSystemUiVisibility = decor.systemUiVisibility
+                    decor.addView(view, FrameLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                    ))
+                    webView?.visibility = View.GONE
+                    decor.systemUiVisibility = (
+                        View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
+                        View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
+                        View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
+                        View.SYSTEM_UI_FLAG_FULLSCREEN or
+                        View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+                        View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                    )
+                    activity.window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
+                }
+
+                override fun onHideCustomView() {
+                    hideFullscreenView()
+                }
+            }
             webViewClient = object : WebViewClient() {
                 override fun onPageFinished(view: WebView, url: String) {
                     super.onPageFinished(view, url)
@@ -133,6 +173,7 @@ class WebViewYouTubeEngine(private val context: Context) : PlayerEngine {
     }
 
     override fun release() {
+        hideFullscreenView()
         isReleased = true
         stateListener = null
         pollTask?.let { handler.removeCallbacks(it) }
@@ -231,6 +272,19 @@ class WebViewYouTubeEngine(private val context: Context) : PlayerEngine {
                 Log.w(TAG, "Could not parse YouTube player snapshot", e)
             }
         }
+    }
+
+    private fun hideFullscreenView() {
+        val view = fullscreenView ?: return
+        fullscreenDecor?.removeView(view)
+        fullscreenView = null
+        fullscreenDecor?.systemUiVisibility = originalSystemUiVisibility
+        fullscreenDecor = null
+        (context as? Activity)?.window?.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
+        webView?.visibility = View.VISIBLE
+        val callback = fullscreenCallback
+        fullscreenCallback = null
+        callback?.onCustomViewHidden()
     }
 
     private fun evaluate(script: String, callback: ((String?) -> Unit)? = null) {
