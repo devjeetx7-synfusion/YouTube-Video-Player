@@ -154,7 +154,7 @@
   });
 
   window.CineFlowPlayer = {
-    isReady: function () { return !!ready && !!player; },
+    isReady: function () { return (!!ready && !!player) || errorCode !== 0; },
     loadVideo: function (videoId, autoplay, startSeconds) {
       if (!ready || !player || !/^[A-Za-z0-9_-]{11}$/.test(String(videoId || ""))) return false;
       errorCode = 0;
@@ -176,7 +176,7 @@
       var duration = ready && player ? Number(player.getDuration()) || 0 : 0;
       var position = ready && player ? Number(player.getCurrentTime()) || 0 : 0;
       return JSON.stringify({
-        ready: !!ready,
+        ready: (!!ready && !!player) || errorCode !== 0,
         state: playerState,
         error: errorCode,
         duration: duration,
