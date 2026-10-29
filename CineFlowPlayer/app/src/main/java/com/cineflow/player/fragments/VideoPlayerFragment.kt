@@ -3,14 +3,17 @@ package com.cineflow.player.fragments
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
-import android.os.Bundle\nimport android.os.Handler\nimport android.os.Looper
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.LinearLayout
-import android.widget.ProgressBar\nimport android.widget.SeekBar
+import android.widget.ProgressBar
+import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -55,7 +58,15 @@ class VideoPlayerFragment : Fragment() {
     private lateinit var btnOpenExternal: MaterialButton
     private lateinit var tvTitle: TextView
     private lateinit var tvSourceBadge: TextView
-    private lateinit var btnFavorite: ImageButton\n    private lateinit var customControls: LinearLayout\n    private lateinit var seekBar: SeekBar\n    private lateinit var tvCurrentTime: TextView\n    private lateinit var tvTotalTime: TextView\n    private lateinit var btnPlayPause: MaterialButton\n    private val progressHandler = Handler(Looper.getMainLooper())\n    private var isUserSeeking = false\n    private var progressRunnable: Runnable? = null
+    private lateinit var btnFavorite: ImageButton
+    private lateinit var customControls: LinearLayout
+    private lateinit var seekBar: SeekBar
+    private lateinit var tvCurrentTime: TextView
+    private lateinit var tvTotalTime: TextView
+    private lateinit var btnPlayPause: MaterialButton
+    private val progressHandler = Handler(Looper.getMainLooper())
+    private var isUserSeeking = false
+    private var progressRunnable: Runnable? = null
 
     private var isFavorite = false
     private var playbackErrorShown = false
@@ -81,7 +92,33 @@ class VideoPlayerFragment : Fragment() {
         btnOpenExternal = view.findViewById(R.id.btn_open_external)
         tvTitle = view.findViewById(R.id.tv_video_title)
         tvSourceBadge = view.findViewById(R.id.tv_source_badge)
-        btnFavorite = view.findViewById(R.id.btn_favorite)\n        customControls = view.findViewById(R.id.layout_custom_controls)\n        seekBar = view.findViewById(R.id.seekbar_video)\n        tvCurrentTime = view.findViewById(R.id.tv_current_time)\n        tvTotalTime = view.findViewById(R.id.tv_total_time)\n        btnPlayPause = view.findViewById(R.id.btn_player_play_pause)\n\n        btnPlayPause.setOnClickListener {\n            val engine = playerEngine ?: return@setOnClickListener\n            if (engine.isPlaying()) engine.pause() else engine.play()\n            updatePlayPauseLabel()\n        }\n        seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {\n            override fun onProgressChanged(bar: SeekBar?, progress: Int, fromUser: Boolean) {\n                if (fromUser) {\n                    val duration = playerEngine?.getDuration() ?: 0L\n                    if (duration > 0L) tvCurrentTime.text = formatTime(duration * progress / 1000L)\n                }\n            }\n            override fun onStartTrackingTouch(bar: SeekBar?) { isUserSeeking = true }\n            override fun onStopTrackingTouch(bar: SeekBar?) {\n                val duration = playerEngine?.getDuration() ?: 0L\n                if (duration > 0L) playerEngine?.seekTo(duration * (bar?.progress ?: 0) / 1000L)\n                isUserSeeking = false\n                updatePlaybackProgress()\n            }\n        })
+        btnFavorite = view.findViewById(R.id.btn_favorite)
+        customControls = view.findViewById(R.id.layout_custom_controls)
+        seekBar = view.findViewById(R.id.seekbar_video)
+        tvCurrentTime = view.findViewById(R.id.tv_current_time)
+        tvTotalTime = view.findViewById(R.id.tv_total_time)
+        btnPlayPause = view.findViewById(R.id.btn_player_play_pause)
+
+        btnPlayPause.setOnClickListener {
+            val engine = playerEngine ?: return@setOnClickListener
+            if (engine.isPlaying()) engine.pause() else engine.play()
+            updatePlayPauseLabel()
+        }
+        seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(bar: SeekBar?, progress: Int, fromUser: Boolean) {
+                if (fromUser) {
+                    val duration = playerEngine?.getDuration() ?: 0L
+                    if (duration > 0L) tvCurrentTime.text = formatTime(duration * progress / 1000L)
+                }
+            }
+            override fun onStartTrackingTouch(bar: SeekBar?) { isUserSeeking = true }
+            override fun onStopTrackingTouch(bar: SeekBar?) {
+                val duration = playerEngine?.getDuration() ?: 0L
+                if (duration > 0L) playerEngine?.seekTo(duration * (bar?.progress ?: 0) / 1000L)
+                isUserSeeking = false
+                updatePlaybackProgress()
+            }
+        })
 
         val url = args.videoUrl
         val resolved = VideoSourceResolver.resolve(url)
