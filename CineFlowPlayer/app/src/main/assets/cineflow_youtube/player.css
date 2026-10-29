@@ -123,3 +123,9 @@ button, input { font: inherit; }
   .icon-button { width: 32px; height: 32px; }
   .time-label, .time-divider { font-size: 11px; }
 }
+.player-shell:fullscreen {
+  width: 100vw;
+  height: 100vh;
+  min-height: 0;
+}
+.player-shell:fullscreen .custom-controls { padding-bottom: max(10px, env(safe-area-inset-bottom)); }
