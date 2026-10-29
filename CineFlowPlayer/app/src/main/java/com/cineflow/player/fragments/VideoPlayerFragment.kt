@@ -4,6 +4,8 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,6 +13,7 @@ import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.ProgressBar
+import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -28,7 +31,7 @@ import com.cineflow.player.models.VideoEntity
 import com.cineflow.player.player.NativeEngine
 import com.cineflow.player.player.PlaybackState
 import com.cineflow.player.player.PlayerEngine
-import com.cineflow.player.player.YouTubeEngine
+import com.cineflow.player.player.WebViewYouTubeEngine
 import com.cineflow.player.repository.VideoRepository
 import com.cineflow.player.resolver.VideoSource
 import com.cineflow.player.resolver.VideoSourceResolver
@@ -56,6 +59,14 @@ class VideoPlayerFragment : Fragment() {
     private lateinit var tvTitle: TextView
     private lateinit var tvSourceBadge: TextView
     private lateinit var btnFavorite: ImageButton
+    private lateinit var customControls: LinearLayout
+    private lateinit var seekBar: SeekBar
+    private lateinit var tvCurrentTime: TextView
+    private lateinit var tvTotalTime: TextView
+    private lateinit var btnPlayPause: MaterialButton
+    private val progressHandler = Handler(Looper.getMainLooper())
+    private var isUserSeeking = false
+    private var progressRunnable: Runnable? = null
 
     private var isFavorite = false
     private var playbackErrorShown = false
@@ -82,6 +93,31 @@ class VideoPlayerFragment : Fragment() {
         tvTitle = view.findViewById(R.id.tv_video_title)
         tvSourceBadge = view.findViewById(R.id.tv_source_badge)
         btnFavorite = view.findViewById(R.id.btn_favorite)
+        customControls = view.findViewById(R.id.layout_custom_controls)
+        seekBar = view.findViewById(R.id.seekbar_video)
+        tvCurrentTime = view.findViewById(R.id.tv_current_time)
+        tvTotalTime = view.findViewById(R.id.tv_total_time)
+        btnPlayPause = view.findViewById(R.id.btn_player_play_pause)
+
+        btnPlayPause.setOnClickListener {
+            val engine = playerEngine ?: return@setOnClickListener
+            if (engine.isPlaying()) engine.pause() else engine.play()
+            updatePlayPauseLabel()
+        }
+        seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(bar: SeekBar?, progress: Int, fromUser: Boolean) {
+                if (fromUser) {
+                    val duration = playerEngine?.getDuration() ?: 0L
+                    if (duration > 0L) tvCurrentTime.text = formatTime(duration * progress / 1000L)
+                }
+            }
+            override fun onStartTrackingTouch(bar: SeekBar?) { isUserSeeking = true }
+            override fun onStopTrackingTouch(bar: SeekBar?) {
+                val duration = playerEngine?.getDuration() ?: 0L
+                if (duration > 0L) playerEngine?.seekTo(duration * (bar?.progress ?: 0) / 1000L)
+                isUserSeeking = false
+            }
+        })
 
         val url = args.videoUrl
         val resolved = VideoSourceResolver.resolve(url)
@@ -170,11 +206,17 @@ class VideoPlayerFragment : Fragment() {
     }
 
     private fun setupPlayer(url: String, resolved: VideoSource) {
+        stopProgressUpdates()
+        isUserSeeking = false
+        seekBar.progress = 0
+        tvCurrentTime.text = "00:00"
+        tvTotalTime.text = "00:00"
+        customControls.visibility = View.GONE
         playerEngine?.release()
         playerContainer.removeAllViews()
 
         playerEngine = if (resolved is VideoSource.YouTube) {
-            YouTubeEngine(requireContext())
+            WebViewYouTubeEngine(requireContext())
         } else {
             NativeEngine(requireContext())
         }
@@ -192,9 +234,11 @@ class VideoPlayerFragment : Fragment() {
                         pbLoading.visibility = View.GONE
                         layoutError.visibility = View.GONE
                         playbackErrorShown = false
+                        updatePlayPauseLabel()
                     }
                     PlaybackState.PAUSED, PlaybackState.ENDED, PlaybackState.IDLE -> {
                         pbLoading.visibility = View.GONE
+                        updatePlayPauseLabel()
                     }
                     PlaybackState.ERROR -> {
                         pbLoading.visibility = View.GONE
@@ -215,6 +259,52 @@ class VideoPlayerFragment : Fragment() {
             play()
         }
         isEngineInitialized = true
+        if (resolved is VideoSource.YouTube) startProgressUpdates()
+    }
+
+
+    private fun startProgressUpdates() {
+        stopProgressUpdates()
+        val task = object : Runnable {
+            override fun run() {
+                if (!isAdded || view == null) return
+                updatePlaybackProgress()
+                progressHandler.postDelayed(this, 400L)
+            }
+        }
+        progressRunnable = task
+        progressHandler.post(task)
+    }
+
+    private fun stopProgressUpdates() {
+        progressRunnable?.let { progressHandler.removeCallbacks(it) }
+        progressRunnable = null
+    }
+
+    private fun updatePlaybackProgress() {
+        val engine = playerEngine ?: return
+        val duration = engine.getDuration().coerceAtLeast(0L)
+        val position = engine.getCurrentPosition().coerceIn(0L, if (duration > 0L) duration else Long.MAX_VALUE)
+        if (!isUserSeeking) {
+            seekBar.progress = if (duration > 0L) ((position * 1000L) / duration).toInt().coerceIn(0, 1000) else 0
+            tvCurrentTime.text = formatTime(position)
+        }
+        tvTotalTime.text = formatTime(duration)
+        updatePlayPauseLabel()
+    }
+
+    private fun updatePlayPauseLabel() {
+        if (!::btnPlayPause.isInitialized) return
+        btnPlayPause.text = if (playerEngine?.isPlaying() == true) "Pause" else "Play"
+    }
+
+    private fun formatTime(milliseconds: Long): String {
+        val totalSeconds = (milliseconds.coerceAtLeast(0L) / 1000L)
+        val hours = totalSeconds / 3600L
+        val minutes = (totalSeconds % 3600L) / 60L
+        val seconds = totalSeconds % 60L
+        return if (hours > 0L) String.format(java.util.Locale.ROOT, "%d:%02d:%02d", hours, minutes, seconds)
+        else String.format(java.util.Locale.ROOT, "%02d:%02d", minutes, seconds)
     }
 
     private fun showExternalDialog(videoId: String) {
@@ -275,6 +365,7 @@ class VideoPlayerFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        stopProgressUpdates()
         super.onDestroyView()
         playerEngine?.release()
         playerEngine = null

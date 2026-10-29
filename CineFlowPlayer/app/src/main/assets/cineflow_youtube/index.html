@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="color-scheme" content="dark">
+  <title>CineFlow YouTube Player</title>
+  <link rel="stylesheet" href="player.css">
+</head>
+<body>
+  <main id="player-shell" class="player-shell">
+    <div id="video-stage" class="video-stage">
+      <div id="youtube-player"></div>
+      <div id="loading-indicator" class="loading-indicator" aria-label="Loading video">
+        <span></span>
+      </div>
+      <div id="error-message" class="error-message" role="status" hidden>
+        <strong>Video unavailable</strong>
+        <span id="error-detail">This video cannot be played in the embedded player.</span>
+      </div>
+      <button id="center-play" class="center-play" type="button" aria-label="Play video" hidden>▶</button>
+    </div>
+    <section id="custom-controls" class="custom-controls" aria-label="Video controls">
+      <input id="seekbar" class="seekbar" type="range" min="0" max="1000" value="0" step="1" aria-label="Video position">
+      <div class="control-row">
+        <button id="play-pause" class="icon-button play-button" type="button" aria-label="Play">▶</button>
+        <span id="current-time" class="time-label">00:00</span>
+        <span class="time-divider">/</span>
+        <span id="total-time" class="time-label">00:00</span>
+        <span class="control-spacer"></span>
+        <button id="mute-button" class="icon-button mute-button" type="button" aria-label="Mute audio">🔊</button>
+        <button id="fullscreen-button" class="icon-button fullscreen-button" type="button" aria-label="Enter fullscreen">⛶</button>
+      </div>
+    </section>
+  </main>
+  <script src="player.js"></script>
+</body>
+</html>
