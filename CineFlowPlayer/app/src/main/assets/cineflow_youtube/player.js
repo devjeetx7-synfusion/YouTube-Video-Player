@@ -15,6 +15,7 @@
   var centerPlay = document.getElementById("center-play");
   var playButton = document.getElementById("play-pause");
   var muteButton = document.getElementById("mute-button");
+  var fullscreenButton = document.getElementById("fullscreen-button");
   var seekbar = document.getElementById("seekbar");
   var currentTime = document.getElementById("current-time");
   var totalTime = document.getElementById("total-time");
@@ -151,6 +152,23 @@
       muteButton.textContent = "🔇";
       muteButton.setAttribute("aria-label", "Unmute audio");
     }
+  });
+
+  fullscreenButton.addEventListener("click", function () {
+    try {
+      if (document.fullscreenElement) {
+        document.exitFullscreen();
+        fullscreenButton.setAttribute("aria-label", "Enter fullscreen");
+      } else if (shell.requestFullscreen) {
+        shell.requestFullscreen();
+        fullscreenButton.setAttribute("aria-label", "Exit fullscreen");
+      }
+    } catch (_) {
+      // Some WebView versions do not expose the Fullscreen API.
+    }
+  });
+  document.addEventListener("fullscreenchange", function () {
+    fullscreenButton.setAttribute("aria-label", document.fullscreenElement ? "Exit fullscreen" : "Enter fullscreen");
   });
 
   window.CineFlowPlayer = {
