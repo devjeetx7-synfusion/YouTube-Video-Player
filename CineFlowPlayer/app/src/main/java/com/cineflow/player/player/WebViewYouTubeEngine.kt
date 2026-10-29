@@ -40,6 +40,7 @@ class WebViewYouTubeEngine(private val context: Context) : PlayerEngine {
     private var fullscreenCallback: WebChromeClient.CustomViewCallback? = null
     private var fullscreenDecor: FrameLayout? = null
     private var originalSystemUiVisibility = 0
+    private var originalWindowFlags = 0
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun initialize(container: ViewGroup, lifecycleOwner: LifecycleOwner) {
@@ -72,7 +73,7 @@ class WebViewYouTubeEngine(private val context: Context) : PlayerEngine {
             settings.builtInZoomControls = false
             settings.displayZoomControls = false
             webChromeClient = object : WebChromeClient() {
-                override fun onShowCustomView(view: View, callback: CustomViewCallback) {
+                override fun onShowCustomView(view: View, callback: WebChromeClient.CustomViewCallback) {
                     val activity = context as? Activity
                     val decor = activity?.window?.decorView as? FrameLayout
                     if (activity == null || decor == null || fullscreenView != null) {
@@ -83,6 +84,7 @@ class WebViewYouTubeEngine(private val context: Context) : PlayerEngine {
                     fullscreenCallback = callback
                     fullscreenDecor = decor
                     originalSystemUiVisibility = decor.systemUiVisibility
+                    originalWindowFlags = activity.window.attributes.flags
                     decor.addView(view, FrameLayout.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.MATCH_PARENT
@@ -280,7 +282,13 @@ class WebViewYouTubeEngine(private val context: Context) : PlayerEngine {
         fullscreenView = null
         fullscreenDecor?.systemUiVisibility = originalSystemUiVisibility
         fullscreenDecor = null
-        (context as? Activity)?.window?.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
+        (context as? Activity)?.window?.let { window ->
+            if ((originalWindowFlags and WindowManager.LayoutParams.FLAG_FULLSCREEN) != 0) {
+                window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
+            } else {
+                window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
+            }
+        }
         webView?.visibility = View.VISIBLE
         val callback = fullscreenCallback
         fullscreenCallback = null
