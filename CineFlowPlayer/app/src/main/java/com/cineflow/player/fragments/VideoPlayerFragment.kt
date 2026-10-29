@@ -31,7 +31,7 @@ import com.cineflow.player.models.VideoEntity
 import com.cineflow.player.player.NativeEngine
 import com.cineflow.player.player.PlaybackState
 import com.cineflow.player.player.PlayerEngine
-import com.cineflow.player.player.YouTubeEngine
+import com.cineflow.player.player.WebViewYouTubeEngine
 import com.cineflow.player.repository.VideoRepository
 import com.cineflow.player.resolver.VideoSource
 import com.cineflow.player.resolver.VideoSourceResolver
@@ -211,12 +211,12 @@ class VideoPlayerFragment : Fragment() {
         seekBar.progress = 0
         tvCurrentTime.text = "00:00"
         tvTotalTime.text = "00:00"
-        customControls.visibility = if (resolved is VideoSource.YouTube) View.VISIBLE else View.GONE
+        customControls.visibility = View.GONE
         playerEngine?.release()
         playerContainer.removeAllViews()
 
         playerEngine = if (resolved is VideoSource.YouTube) {
-            YouTubeEngine(requireContext())
+            WebViewYouTubeEngine(requireContext())
         } else {
             NativeEngine(requireContext())
         }
